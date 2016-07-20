@@ -1,5 +1,14 @@
 import socket, postfile, json, time, urllib, urllib2
 
+"""
+
+for test please enter the method 1 or 2
+and if you choose 1 please enter the file name of the file containing the signature of the virus
+
+"""
+
+
+
 def deleteContent(pfile): # delete files content in case it contains malicious software
     pfile.seek(0)
     pfile.truncate()
@@ -11,21 +20,26 @@ the resoure parameter is received from the scan request done earlier in checkvir
 
 """
 
+
+
 def retrievefromvirustotal(j):
     url = "https://www.virustotal.com/vtapi/v2/file/report"
-    parameters = {"resource": j, "apikey": "61ee5459e495525126a8b8297f24fd6768ca4f38a0cbbc3435c96926c47fa14d"} # my api key at virustotal
+    parameters = {"resource": j, "apikey": "61ee5459e495525126a8b8297f24fd6768ca4f38a0cbbc3435c96926c47fa14d"} # my api key at virustotal, resource is given from last func
     data = urllib.urlencode(parameters)
     req = urllib2.Request(url, data)
     response = urllib2.urlopen(req)
     json_ = response.read()
     j = json.loads(json_)
+     # as long as the response code from virus total isnt '1' than the scan isnt done and we need to wait,
+     # the long wait period is because we are using a free api key so we can only make 4 calls to virus total for each client.
+     # if the wait time was shorter we will get an exception if the scan will take too long. (this is prevented)
     while j['response_code'] != 1:
         print 'Still Thinking...'
-        time.sleep(30) # it takes virustoal a while to check the file so we will wait for response_code to be 1, meaning the review is ready
+        time.sleep(30) # it takes virus toal a while to check the file so we will wait for response_code to be 1, meaning the review is ready
         response = urllib2.urlopen(req)
         json_ = response.read()
         j = json.loads(json_)
-    return j['positives']
+    return j['positives'] # returns the number of positive virus discoveries, if zero no viruses found, the file is clean and we can save it
 
 """
 is this function we are sending the file received from the server to the virustotal servers
@@ -41,7 +55,7 @@ def checkvirustotalDB(file):
     files = [("file", "mytext.txt", file_to_send)]
     json_ = postfile.post_multipart(host, selector, fields, files)
     j = json.loads(json_)
-    return retrievefromvirustotal(j['scan_id'])
+    return retrievefromvirustotal(j['scan_id']) # we are sending the scan_id parameter so we can get the correct response later
 
 def checkforvirus(data, signature): # check with known in adavnace signature
     if signature in data:
